@@ -457,19 +457,30 @@
         const blocker = document.getElementById('blocker');
         const startBtn = document.getElementById('start-btn');
 
-        // ฟังก์ชันเริ่มเกมที่ออกแบบมาให้คลิกปุ่มได้แน่นอน
+        // ฟังก์ชันสั่งล็อกหน้าจอพร้อมรับประกันการทำงานร่วมกับเบราว์เซอร์
         function startGame(e) {
-            e.stopPropagation();
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-            controls.lock();
+            if (e) e.stopPropagation();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            try {
+                controls.lock();
+            } catch (err) {
+                renderer.domElement.requestPointerLock();
+            }
         }
 
         startBtn.addEventListener('click', startGame);
         blocker.addEventListener('click', startGame);
 
-        controls.addEventListener('lock', () => blocker.style.display = 'none');
+        controls.addEventListener('lock', () => {
+            blocker.style.display = 'none';
+        });
+
         controls.addEventListener('unlock', () => {
-            if(!cctvActive) blocker.style.display = 'flex';
+            if (!cctvActive) {
+                blocker.style.display = 'flex';
+            }
         });
 
         const moveState = { forward: false, backward: false, left: false, right: false, run: false };

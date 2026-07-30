@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shy Ghost Mansion - Ultimate Hide & Seek</title>
+    <title>Shy Ghost Mansion: Ultimate Prankster Edition</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background-color: #030308;
+            background-color: #020205;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             user-select: none;
         }
@@ -22,18 +22,12 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 12px;
-            height: 12px;
-            border: 2px solid rgba(255, 117, 140, 0.8);
+            width: 10px;
+            height: 10px;
+            border: 2px solid rgba(255, 117, 140, 0.9);
             border-radius: 50%;
             pointer-events: none;
             z-index: 10;
-            transition: transform 0.1s, background-color 0.1s;
-        }
-        #crosshair.scaring {
-            transform: translate(-50%, -50%) scale(2);
-            background-color: rgba(255, 255, 255, 0.8);
-            border-color: #fff;
         }
         #hud {
             position: absolute;
@@ -43,35 +37,92 @@
             text-shadow: 0 2px 4px rgba(0,0,0,0.9);
             pointer-events: none;
             z-index: 10;
-            background: rgba(10, 10, 25, 0.6);
+            background: rgba(10, 10, 25, 0.75);
             padding: 15px 25px;
             border-radius: 12px;
             border-left: 4px solid #ff758c;
+            backdrop-filter: blur(5px);
         }
-        #hud h1 { margin: 0 0 10px 0; font-size: 22px; color: #ff758c; }
-        #hud p { margin: 5px 0; font-size: 16px; font-weight: bold; }
+        #hud h1 { margin: 0 0 8px 0; font-size: 20px; color: #ff758c; }
+        #hud p { margin: 4px 0; font-size: 14px; font-weight: bold; }
 
-        #controls-hint {
+        /* ไอเทมที่ถือในมือ / ช่องเก็บของ */
+        #inventory-bar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 12px;
+            background: rgba(15, 12, 27, 0.85);
+            padding: 10px 20px;
+            border-radius: 20px;
+            border: 1px solid rgba(255,117,140,0.4);
+            z-index: 10;
+            pointer-events: none;
+        }
+        .slot {
+            width: 50px;
+            height: 50px;
+            background: rgba(25, 20, 45, 0.9);
+            border: 2px solid #443b6b;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 12px;
+            position: relative;
+        }
+        .slot.active {
+            border-color: #ff758c;
+            box-shadow: 0 0 10px rgba(255,117,140,0.6);
+        }
+        .slot span { font-size: 10px; color: #ff758c; position: absolute; bottom: 2px; }
+
+        /* แท็บเล็ตกล้องวงจรปิด */
+        #cctv-screen {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            border: 15px solid #111;
+            display: none;
+            z-index: 100;
+            box-sizing: border-box;
+        }
+        #cctv-header {
+            position: absolute;
+            top: 25px; left: 35px;
+            color: #4cd137;
+            font-family: monospace;
+            font-size: 20px;
+            text-shadow: 0 0 5px #4cd137;
+        }
+        #cctv-controls {
             position: absolute;
             bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            background: rgba(15, 12, 27, 0.85);
-            color: #ff758c;
-            padding: 12px 30px;
-            border-radius: 30px;
-            font-size: 15px;
-            border: 1px solid rgba(255,117,140,0.4);
-            pointer-events: none;
-            z-index: 10;
-            text-align: center;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+            display: flex;
+            gap: 15px;
         }
+        .cctv-btn {
+            background: #222;
+            color: #4cd137;
+            border: 2px solid #4cd137;
+            padding: 10px 20px;
+            font-family: monospace;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: 0.2s;
+        }
+        .cctv-btn:hover { background: #4cd137; color: #111; }
 
         #blocker {
             position: absolute;
-            width: 100%;
-            height: 100%;
+            width: 100%; height: 100%;
             background-color: rgba(3, 3, 8, 0.95);
             display: flex;
             flex-direction: column;
@@ -83,57 +134,63 @@
         #instructions {
             text-align: center;
             color: #fff;
-            max-width: 600px;
+            max-width: 650px;
             padding: 40px;
             background: rgba(20, 16, 35, 0.95);
             border: 2px solid #ff758c;
             border-radius: 20px;
             box-shadow: 0 15px 50px rgba(255,117,140,0.4);
         }
-        #instructions h2 { color: #ff758c; margin-top: 0; font-size: 32px; }
-        #instructions p { color: #ddd; font-size: 16px; line-height: 1.8; }
+        #instructions h2 { color: #ff758c; margin-top: 0; font-size: 28px; }
+        #instructions p { color: #ddd; font-size: 15px; line-height: 1.7; text-align: left; }
         #instructions .btn {
             background: linear-gradient(135deg, #ff758c, #ff7eb3);
             color: white;
             border: none;
-            padding: 15px 40px;
+            padding: 14px 35px;
             font-size: 18px;
             font-weight: bold;
             border-radius: 30px;
             cursor: pointer;
-            margin-top: 25px;
+            margin-top: 20px;
             box-shadow: 0 6px 20px rgba(255,117,140,0.6);
             transition: transform 0.2s;
         }
         #instructions .btn:hover { transform: scale(1.05); }
-        
+
         #flash-overlay {
             position: absolute;
             top: 0; left: 0; width: 100vw; height: 100vh;
-            background: white;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 900;
-            transition: opacity 0.1s;
+            background: white; opacity: 0; pointer-events: none; z-index: 900;
+            transition: opacity 0.05s;
         }
     </style>
 </head>
 <body>
 
     <div id="flash-overlay"></div>
+    <div id="cctv-screen">
+        <div id="cctv-header">🔴 LIVE FEED // CAMERA CAM-<span id="cam-id">1</span> (SHY_GHOST_ZONE)</div>
+        <div id="cctv-controls">
+            <button class="cctv-btn" onclick="switchCam(1)">CAM 1: โถงใหญ่</button>
+            <button class="cctv-btn" onclick="switchCam(2)">CAM 2: ห้องโถงลึก</button>
+            <button class="cctv-btn" onclick="switchCam(3)">CAM 3: มุมลับห้องนอน</button>
+            <button class="cctv-btn" onclick="toggleCCTV()" style="border-color:#ff758c; color:#ff758c;">ปิดกล้อง [C]</button>
+        </div>
+    </div>
+
     <div id="blocker">
         <div id="instructions">
-            <h2>👻 มหกรรมแกล้งผีขี้อาย 🔦</h2>
+            <h2>🦊 Shy Ghost Mansion: Ultimate Prankster 🔦</h2>
             <p>
-                คฤหาสน์นี้มี <b>"ผีจิ้งจอกน้อย"</b> ซ่อนตัวอยู่ แต่มันขี้อายมากๆ!<br>
-                หน้าที่ของคุณคือการเดินตามหามันให้เจอ แล้ว <b>คลิกเมาส์ซ้าย</b> เพื่อแกล้งให้มันตกใจ<br>
-                เมื่อมันตกใจ มันจะทำลูกกวาดวิเศษหล่นไว้ แกล้งมันและเก็บลูกกวาดให้ครบ 10 ชิ้น!
+                <b>ระบบและฟังก์ชันใหม่จัดเต็ม:</b><br>
+                • <b>[W A S D]</b> เดิน | <b>[Shift]</b> วิ่ง | <b>[Spacebar]</b> กระโดดข้ามสิ่งกีดขวาง<br>
+                • <b>[F]</b> ไฟฉาย (ระวังแบตหมด! มีเกจแบตเตอรี่คอยเติม)<br>
+                • <b>[E]</b> เปิด/ปิดประตูสมจริง หรือค้นหาตู้เพื่อเก็บ <b>ไอเทมแกล้งผี (ปืนฟองสบู่ / ตุ๊กตาหลอก / กล่องดนตรี)</b><br>
+                • <b>[C]</b> เปิดกล้องวงจรปิดเพื่อเช็กพฤติกรรมกวนๆ ของน้องผี<br>
+                • <b>[คลิกซ้าย]</b> ใช้ไอเทมที่เลือกในช่องเก็บของเพื่อแกล้งน้องผีจิ้งจอกขี้อาย!
             </p>
-            <p style="font-size: 14px; color: #ff758c; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px;">
-                🎮 ควบคุม: [W A S D] เดิน | [Mouse] มองรอบๆ<br>
-                💡 [คลิกซ้าย] ตะโกนแกล้งผี! | [F] เปิด/ปิดไฟฉาย | [Shift] วิ่ง
-            </p>
-            <button class="btn">เข้าสู่คฤหาสน์ 🚪</button>
+            <button class="btn">เริ่มปฏิบัติการแกล้งผี 🕯️</button>
         </div>
     </div>
 
@@ -141,73 +198,62 @@
     <div id="crosshair"></div>
 
     <div id="hud">
-        <h1>🦊 แกล้งผีขี้อาย</h1>
-        <p>🍬 ลูกกวาดที่ยึดมาได้: <span id="candy-val">0</span> / 10</p>
-        <p>สถานะผี: <span id="status-val" style="color: #4cd137;">แอบซ่อนอยู่...</span></p>
+        <h1>🦊 มหกรรมแกล้งผีจิ้งจอก</h1>
+        <p>🔋 แบตเตอรี่ไฟฉาย: <span id="battery-val">100</span>%</p>
+        <p>🍬 ลูกกวาดที่ยึดมาได้: <span id="candy-val">0</span> / 8</p>
+        <p>สถานะน้องผี: <span id="status-val" style="color: #4cd137;">แอบส่องหลังเสา...</span></p>
     </div>
 
-    <div id="controls-hint">
-        💡 เดินหาผีจิ้งจอกให้เจอ แล้ว "คลิกซ้าย" แกล้งมันให้ตกใจ!
+    <div id="inventory-bar">
+        <div class="slot active" id="slot-1">🫧<span>[1]</span></div>
+        <div class="slot" id="slot-2">🧸<span>[2]</span></div>
+        <div class="slot" id="slot-3">📦<span>[3]</span></div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
 
     <script>
-        // --- SYNTH AUDIO SYSTEM (No external files needed) ---
+        // --- SYNTH AUDIO SYSTEM ---
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         
-        function playScareSound() {
+        function playSfx(type) {
             if(audioCtx.state === 'suspended') audioCtx.resume();
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(100, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.3);
-        }
-
-        function playGhostCry() {
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-            osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.1);
-            osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.5);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.5);
-        }
-
-        function playCandySound() {
-            if(audioCtx.state === 'suspended') audioCtx.resume();
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-            osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.1);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.2);
+            
+            if (type === 'prank') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+            } else if (type === 'ghost_cry') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(750, audioCtx.currentTime + 0.15);
+                osc.frequency.exponentialRampToValueAtTime(350, audioCtx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.25, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.4);
+            } else if (type === 'door') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+                osc.frequency.linearRampToValueAtTime(60, audioCtx.currentTime + 0.15);
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            }
         }
 
         // --- SCENE SETUP ---
         const container = document.getElementById('canvas-container');
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x020205);
-        scene.fog = new THREE.FogExp2(0x020205, 0.04);
+        scene.fog = new THREE.FogExp2(0x020205, 0.035);
 
         const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(2, 1.6, 2);
@@ -217,11 +263,10 @@
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-        renderer.outputEncoding = THREE.sRGBEncoding;
         container.appendChild(renderer.domElement);
 
         // --- LIGHTING ---
-        const hemiLight = new THREE.HemisphereLight(0x1a1a3a, 0x050515, 0.6);
+        const hemiLight = new THREE.HemisphereLight(0x1a1a3a, 0x050515, 0.5);
         scene.add(hemiLight);
 
         // --- FLASHLIGHT (POV) ---
@@ -229,42 +274,44 @@
         camera.add(flashlightGroup);
         scene.add(camera);
 
-        const spotLight = new THREE.SpotLight(0xfff0dd, 3.5, 30, Math.PI / 5, 0.6, 1.5);
+        const spotLight = new THREE.SpotLight(0xfff0dd, 4.0, 25, Math.PI / 5, 0.5, 1.5);
         spotLight.position.set(0, 0, 0);
         spotLight.target.position.set(0, 0, -10);
         spotLight.castShadow = true;
-        spotLight.shadow.mapSize.width = 1024;
-        spotLight.shadow.mapSize.height = 1024;
         flashlightGroup.add(spotLight);
         flashlightGroup.add(spotLight.target);
 
         let flashlightOn = true;
+        let battery = 100;
 
-        // --- PROCEDURAL MAZE GENERATOR ---
+        // --- PROCEDURAL MANSION & PROPS ---
         const walls = [];
-        const wallMat = new THREE.MeshStandardMaterial({ color: 0x1d1a2f, roughness: 0.9, bumpScale: 0.02 });
+        const interactables = []; // สำหรับประตูและตู้ซ่อนของ
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x1d1a2f, roughness: 0.8 });
+
         const mapLayout = [
             "WWWWWWWWWWWWWWWWWWWW",
-            "W......W...........W",
-            "W..WW..W..WWWWWW...W",
-            "W..WW......W.......W",
-            "W......W...W...WWWWW",
-            "WWWWW..W...W.......W",
-            "W......W...WWWWW...W",
+            "W....D..W..........W",
+            "W..WW...W..WWWWWW..W",
+            "W..WW...D....W.....W",
+            "W.......W..D.W..WWWW",
+            "WWWWW...W....W.....W",
+            "W.....D.W..WWWWW...W",
             "W..WWWWWW..........W",
-            "W.......W..WWWWW...W",
+            "W...T...W..WWWWW...W",
             "W..WW...W..W...W...W",
-            "W..WW......W.......W",
+            "W..WW......D.......W",
             "WWWWWWWWWWWWWWWWWWWW"
         ];
 
         const tileSize = 4;
         const wallHeight = 5;
+        const offsetX = (mapLayout[0].length * tileSize) / 2;
+        const offsetZ = (mapLayout.length * tileSize) / 2;
 
-        // สร้างพื้นและเพดาน
+        // พื้นและเพดาน
         const floorGeo = new THREE.PlaneGeometry(mapLayout[0].length * tileSize, mapLayout.length * tileSize);
-        const floorMat = new THREE.MeshStandardMaterial({ color: 0x0a0914, roughness: 0.8 });
-        const floor = new THREE.Mesh(floorGeo, floorMat);
+        const floor = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({ color: 0x0a0914, roughness: 0.8 }));
         floor.rotation.x = -Math.PI / 2;
         floor.receiveShadow = true;
         scene.add(floor);
@@ -274,117 +321,96 @@
         ceiling.position.y = wallHeight;
         scene.add(ceiling);
 
-        // วาดกำแพงตาม Array
-        const offsetX = (mapLayout[0].length * tileSize) / 2;
-        const offsetZ = (mapLayout.length * tileSize) / 2;
-
+        // วาดกำแพง ประตู และตู้
         for (let z = 0; z < mapLayout.length; z++) {
             for (let x = 0; x < mapLayout[z].length; x++) {
-                if (mapLayout[z][x] === 'W') {
+                const char = mapLayout[z][x];
+                const posX = x * tileSize - offsetX + (tileSize/2);
+                const posZ = z * tileSize - offsetZ + (tileSize/2);
+
+                if (char === 'W') {
                     const geo = new THREE.BoxGeometry(tileSize, wallHeight, tileSize);
                     const mesh = new THREE.Mesh(geo, wallMat);
-                    mesh.position.set(x * tileSize - offsetX + (tileSize/2), wallHeight/2, z * tileSize - offsetZ + (tileSize/2));
-                    mesh.castShadow = true;
-                    mesh.receiveShadow = true;
+                    mesh.position.set(posX, wallHeight/2, posZ);
+                    mesh.castShadow = true; mesh.receiveShadow = true;
                     scene.add(mesh);
                     walls.push(mesh);
-                } else if (Math.random() > 0.85) {
-                    // แอบเพิ่มหลอดไฟสีๆ ตามทางเดิน
-                    const colors = [0xff758c, 0x70a1ff, 0x7bed9f];
-                    const pLight = new THREE.PointLight(colors[Math.floor(Math.random()*colors.length)], 1, 8);
-                    pLight.position.set(x * tileSize - offsetX + (tileSize/2), 3, z * tileSize - offsetZ + (tileSize/2));
-                    scene.add(pLight);
+                } else if (char === 'D') {
+                    // ระบบประตูเปิดปิดได้
+                    const doorGeo = new THREE.BoxGeometry(0.2, wallHeight, 3.2);
+                    const doorMat = new THREE.MeshStandardMaterial({ color: 0x5a3e2b, roughness: 0.5 });
+                    const door = new THREE.Mesh(doorGeo, doorMat);
+                    door.position.set(posX, wallHeight/2, posZ);
+                    door.castShadow = true;
+                    scene.add(door);
+                    walls.push(door);
+                    interactables.push({ type: 'door', mesh: door, isOpen: false, basePos: door.position.clone() });
+                } else if (char === 'T') {
+                    // ตู้เก็บของ / ซ่อนไอเทม
+                    const closetGeo = new THREE.BoxGeometry(2, wallHeight, 1.5);
+                    const closetMat = new THREE.MeshStandardMaterial({ color: 0x3d2817, roughness: 0.6 });
+                    const closet = new THREE.Mesh(closetGeo, closetMat);
+                    closet.position.set(posX, wallHeight/2, posZ);
+                    closet.castShadow = true;
+                    scene.add(closet);
+                    walls.push(closet);
+                    interactables.push({ type: 'closet', mesh: closet, searched: false, pos: closet.position.clone() });
                 }
             }
         }
 
-        // --- THE SHY FOX GHOST MODEL ---
+        // --- THE ADVANCED SHY FOX GHOST MODEL (พร้อมแอนิเมชันกวนๆ) ---
         const ghostGroup = new THREE.Group();
-        
-        // ตัวผีนุ่มฟู
-        const ghostMat = new THREE.MeshStandardMaterial({ 
-            color: 0xffffff, 
-            roughness: 0.3, 
-            transparent: true, 
-            opacity: 0.85,
-            emissive: 0x222233
-        });
-        
-        const bodyGeo = new THREE.SphereGeometry(0.7, 32, 32);
-        const body = new THREE.Mesh(bodyGeo, ghostMat);
-        body.scale.set(1, 1.2, 1); // ยืดตัวนิดๆ
-        body.castShadow = true;
+        const ghostMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3, transparent: true, opacity: 0.88 });
+
+        const body = new THREE.Mesh(new THREE.SphereGeometry(0.7, 32, 32), ghostMat);
+        body.scale.set(1, 1.2, 1); body.castShadow = true;
         ghostGroup.add(body);
 
         // หูจิ้งจอก
-        const earGeo = new THREE.ConeGeometry(0.2, 0.6, 16);
-        const leftEar = new THREE.Mesh(earGeo, ghostMat);
-        leftEar.position.set(-0.35, 0.8, 0);
-        leftEar.rotation.z = 0.2;
+        const leftEar = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.6, 16), ghostMat);
+        leftEar.position.set(-0.35, 0.8, 0); leftEar.rotation.z = 0.2;
         ghostGroup.add(leftEar);
-        
-        const rightEar = new THREE.Mesh(earGeo, ghostMat);
-        rightEar.position.set(0.35, 0.8, 0);
-        rightEar.rotation.z = -0.2;
+        const rightEar = new THREE.Mesh(new THREE.ConeGeometry(0.2, 0.6, 16), ghostMat);
+        rightEar.position.set(0.35, 0.8, 0); rightEar.rotation.z = -0.2;
         ghostGroup.add(rightEar);
 
-        // หางกลมๆ โผล่ด้านหลัง
-        const tailGeo = new THREE.SphereGeometry(0.3, 16, 16);
-        const tail = new THREE.Mesh(tailGeo, ghostMat);
-        tail.position.set(0, -0.4, -0.6);
-        ghostGroup.add(tail);
-
-        // หน้าตาขี้อาย (ตา > <)
+        // หน้าตาขี้อายและกวนตีน (แอบชำเลืองมอง)
         const faceGroup = new THREE.Group();
         const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111122 });
-        
-        // ขีดตาซ้าย
         const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.05, 0.05), eyeMat);
         eyeL.position.set(-0.25, 0.2, 0.65);
-        eyeL.rotation.z = Math.PI / 6;
         faceGroup.add(eyeL);
-        const eyeL2 = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.05, 0.05), eyeMat);
-        eyeL2.position.set(-0.25, 0.1, 0.65);
-        eyeL2.rotation.z = -Math.PI / 6;
-        faceGroup.add(eyeL2);
-
-        // ขีดตาขวา
         const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.05, 0.05), eyeMat);
         eyeR.position.set(0.25, 0.2, 0.65);
-        eyeR.rotation.z = -Math.PI / 6;
         faceGroup.add(eyeR);
-        const eyeR2 = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.05, 0.05), eyeMat);
-        eyeR2.position.set(0.25, 0.1, 0.65);
-        eyeR2.rotation.z = Math.PI / 6;
-        faceGroup.add(eyeR2);
 
         // แก้มแดง
         const blushMat = new THREE.MeshBasicMaterial({ color: 0xff758c });
         const blushL = new THREE.Mesh(new THREE.CircleGeometry(0.12, 16), blushMat);
-        blushL.position.set(-0.4, 0, 0.68);
+        blushL.position.set(-0.4, 0.05, 0.68);
         faceGroup.add(blushL);
         const blushR = new THREE.Mesh(new THREE.CircleGeometry(0.12, 16), blushMat);
-        blushR.position.set(0.4, 0, 0.68);
+        blushR.position.set(0.4, 0.05, 0.68);
         faceGroup.add(blushR);
-
         ghostGroup.add(faceGroup);
+
         ghostGroup.position.set(0, 1.5, -8);
         scene.add(ghostGroup);
 
-        // --- COLLECTIBLES (Candies) ---
+        // --- COLLECTIBLES (ลูกกวาด) ---
         const candies = [];
         const candyGeo = new THREE.OctahedronGeometry(0.3);
         const candyMat = new THREE.MeshStandardMaterial({ color: 0xff4757, emissive: 0xaa0022, roughness: 0.1 });
 
         function dropCandy(pos) {
             const candy = new THREE.Mesh(candyGeo, candyMat);
-            candy.position.copy(pos);
-            candy.position.y = 0.5;
+            candy.position.copy(pos); candy.position.y = 0.5;
             scene.add(candy);
             candies.push(candy);
         }
 
-        // --- CONTROLS & POINTER LOCK ---
+        // --- CONTROLS & GAMEPLAY STATE ---
         const controls = new THREE.PointerLockControls(camera, renderer.domElement);
         const blocker = document.getElementById('blocker');
 
@@ -393,77 +419,124 @@
             audioCtx.resume();
         });
         controls.addEventListener('lock', () => blocker.style.display = 'none');
-        controls.addEventListener('unlock', () => blocker.style.display = 'flex');
+        controls.addEventListener('unlock', () => {
+            if(!cctvActive) blocker.style.display = 'flex';
+        });
 
         const moveState = { forward: false, backward: false, left: false, right: false, run: false };
-        let isScaring = false;
+        let playerVelocityY = 0;
+        let isGrounded = true;
+        let selectedSlot = 1;
+        let collectedCandies = 0;
+        let cctvActive = false;
+        let currentCam = 1;
 
         window.addEventListener('keydown', (e) => {
-            if (e.code === 'KeyW' || e.code === 'ArrowUp') moveState.forward = true;
-            if (e.code === 'KeyS' || e.code === 'ArrowDown') moveState.backward = true;
-            if (e.code === 'KeyA' || e.code === 'ArrowLeft') moveState.left = true;
-            if (e.code === 'KeyD' || e.code === 'ArrowRight') moveState.right = true;
+            if (e.code === 'KeyW') moveState.forward = true;
+            if (e.code === 'KeyS') moveState.backward = true;
+            if (e.code === 'KeyA') moveState.left = true;
+            if (e.code === 'KeyD') moveState.right = true;
             if (e.code === 'ShiftLeft') moveState.run = true;
-
+            if (e.code === 'Space' && isGrounded && !cctvActive) {
+                playerVelocityY = 8.5; // กระโดด
+                isGrounded = false;
+            }
             if (e.code === 'KeyF') {
                 flashlightOn = !flashlightOn;
-                spotLight.intensity = flashlightOn ? 3.5 : 0;
+                spotLight.intensity = (flashlightOn && battery > 0) ? 4.0 : 0;
+            }
+            if (e.code === 'KeyC') toggleCCTV();
+            if (e.code === 'KeyE') checkInteraction(); // เปิดประตู / ค้นตู้
+
+            if (['1', '2', '3'].includes(e.key)) {
+                selectedSlot = parseInt(e.key);
+                document.querySelectorAll('.slot').forEach(s => s.classList.remove('active'));
+                document.getElementById(`slot-${selectedSlot}`).classList.add('active');
             }
         });
 
         window.addEventListener('keyup', (e) => {
-            if (e.code === 'KeyW' || e.code === 'ArrowUp') moveState.forward = false;
-            if (e.code === 'KeyS' || e.code === 'ArrowDown') moveState.backward = false;
-            if (e.code === 'KeyA' || e.code === 'ArrowLeft') moveState.left = false;
-            if (e.code === 'KeyD' || e.code === 'ArrowRight') moveState.right = false;
+            if (e.code === 'KeyW') moveState.forward = false;
+            if (e.code === 'KeyS') moveState.backward = false;
+            if (e.code === 'KeyA') moveState.left = false;
+            if (e.code === 'KeyD') moveState.right = false;
             if (e.code === 'ShiftLeft') moveState.run = false;
         });
 
-        // SCARE MECHANIC (คลิกเพื่อแกล้ง)
+        // คลิกซ้ายใช้ไอเทมแกล้งผี
         window.addEventListener('mousedown', (e) => {
-            if (controls.isLocked && e.button === 0 && !isScaring) {
-                isScaring = true;
-                playScareSound();
-                
-                // Visual Effect (แฟลชสว่าง และเป้าเล็งขยาย)
+            if (controls.isLocked && e.button === 0 && !cctvActive) {
+                playSfx('prank');
                 spotLight.intensity = 10;
-                document.getElementById('flash-overlay').style.opacity = '0.3';
-                document.getElementById('crosshair').classList.add('scaring');
+                document.getElementById('flash-overlay').style.opacity = '0.4';
 
-                // เช็คว่าผีอยู่ใกล้และหันหน้าไปหามันไหม
                 const dist = camera.position.distanceTo(ghostGroup.position);
-                const dirToGhost = new THREE.Vector3().subVectors(ghostGroup.position, camera.position).normalize();
-                const camDir = new THREE.Vector3();
-                camera.getWorldDirection(camDir);
-                const dotProduct = camDir.dot(dirToGhost);
-
-                if (dist < 8 && dotProduct > 0.7) {
-                    // แกล้งสำเร็จ! ผีตกใจวิ่งหนี
+                if (dist < 7) {
                     ghostState = 'PANIC';
-                    playGhostCry();
-                    ghostMat.color.setHex(0xffaaaa); // ตัวแดงเพราะตกใจ
-                    
-                    // ดรอปลูกอม
-                    if(Math.random() > 0.3) {
-                        dropCandy(ghostGroup.position.clone());
-                    }
+                    playSfx('ghost_cry');
+                    ghostMat.color.setHex(0xffaaaa);
+                    if(Math.random() > 0.3) dropCandy(ghostGroup.position.clone());
                 }
 
                 setTimeout(() => {
-                    spotLight.intensity = flashlightOn ? 3.5 : 0;
+                    spotLight.intensity = (flashlightOn && battery > 0) ? 4.0 : 0;
                     document.getElementById('flash-overlay').style.opacity = '0';
-                    document.getElementById('crosshair').classList.remove('scaring');
-                    isScaring = false;
-                }, 200);
+                }, 150);
             }
         });
 
+        // --- CCTV SYSTEM ---
+        const camPositions = [
+            new THREE.Vector3(0, 7, 0),   // Cam 1
+            new THREE.Vector3(12, 7, -12), // Cam 2
+            new THREE.Vector3(-12, 7, 12)  // Cam 3
+        ];
+
+        function toggleCCTV() {
+            cctvActive = !cctvActive;
+            const screen = document.getElementById('cctv-screen');
+            if (cctvActive) {
+                controls.unlock();
+                screen.style.display = 'block';
+                switchCam(1);
+            } else {
+                screen.style.display = 'none';
+                controls.lock();
+            }
+        }
+
+        function switchCam(id) {
+            currentCam = id;
+            document.getElementById('cam-id').innerText = id;
+            camera.position.copy(camPositions[id-1]);
+            camera.lookAt(ghostGroup.position);
+        }
+
+        // --- INTERACTION SYSTEM (ประตู และ ตู้) ---
+        function checkInteraction() {
+            for (let obj of interactables) {
+                if (camera.position.distanceTo(obj.mesh.position) < 3.5) {
+                    if (obj.type === 'door') {
+                        obj.isOpen = !obj.isOpen;
+                        obj.mesh.position.y = obj.isOpen ? -10 : obj.basePos.y; // เปิดประตูโดยการย้ายลงพื้นชั่วคราว
+                        playSfx('door');
+                    } else if (obj.type === 'closet' && !obj.searched) {
+                        obj.searched = true;
+                        obj.mesh.material.color.setHex(0x554433);
+                        collectedCandies++;
+                        document.getElementById('candy-val').innerText = collectedCandies;
+                        playSfx('prank');
+                        alert("✨ คุณค้นพบลูกกวาดลับซ่อนอยู่ในตู้!");
+                    }
+                }
+            }
+        }
+
         // --- COLLISION DETECTION ---
         function checkCollision(newPos) {
-            const playerRadius = 0.4;
             const playerBox = new THREE.Box3(
-                new THREE.Vector3(newPos.x - playerRadius, 0.1, newPos.z - playerRadius),
-                new THREE.Vector3(newPos.x + playerRadius, 1.8, newPos.z + playerRadius)
+                new THREE.Vector3(newPos.x - 0.4, newPos.y - 1.6, newPos.z - 0.4),
+                new THREE.Vector3(newPos.x + 0.4, newPos.y + 0.2, newPos.z + 0.4)
             );
             for (let wall of walls) {
                 const wallBox = new THREE.Box3().setFromObject(wall);
@@ -472,117 +545,108 @@
             return false;
         }
 
-        // --- GAME STATE & LOOP ---
-        const clock = new THREE.Clock();
-        let collectedCandies = 0;
-        let ghostState = 'WANDER'; // WANDER, PANIC
+        // --- GHOST AI & ANIMATIONS (กวนตีน แอบมอง และวิ่งหนี) ---
+        let ghostState = 'PEEK'; // PEEK (แอบมอง), WANDER (เดินเล่น), PANIC (ตกใจวิ่งหนี)
         let ghostTarget = new THREE.Vector3();
-        let wanderTimer = 0;
+        let ghostTimer = 0;
 
         function animate() {
             requestAnimationFrame(animate);
             const delta = clock.getDelta();
             const time = clock.getElapsedTime();
 
-            // Player Movement
-            if (controls.isLocked) {
-                const speed = (moveState.run ? 7.5 : 4.5) * delta;
+            // Player Physics & Movement
+            if (controls.isLocked && !cctvActive) {
+                const speed = (moveState.run ? 7.0 : 4.2) * delta;
                 const oldPos = camera.position.clone();
-                const dir = new THREE.Vector3();
 
                 if (moveState.forward) controls.moveForward(speed);
                 if (moveState.backward) controls.moveForward(-speed);
                 if (moveState.left) controls.moveRight(-speed);
                 if (moveState.right) controls.moveRight(speed);
 
-                // Slide Collision แบบง่ายๆ แยกแกน X และ Z
-                if (checkCollision(camera.position)) {
-                    const testX = oldPos.clone().setX(camera.position.x);
-                    const testZ = oldPos.clone().setZ(camera.position.z);
-                    
-                    if (!checkCollision(testX)) {
-                        camera.position.copy(testX);
-                    } else if (!checkCollision(testZ)) {
-                        camera.position.copy(testZ);
-                    } else {
-                        camera.position.copy(oldPos);
-                    }
+                // กระโดดและแรงโน้มถ่วง
+                playerVelocityY -= 20 * delta;
+                camera.position.y += playerVelocityY * delta;
+
+                if (camera.position.y < 1.6) {
+                    camera.position.y = 1.6;
+                    playerVelocityY = 0;
+                    isGrounded = true;
                 }
-                camera.position.y = 1.6;
+
+                if (checkCollision(camera.position)) {
+                    camera.position.copy(oldPos);
+                }
+
+                // แบตเตอรี่ไฟฉายลดลงเรื่อยๆ เมื่อเปิด
+                if (flashlightOn) {
+                    battery = Math.max(0, battery - delta * 0.8);
+                    document.getElementById('battery-val').innerText = Math.floor(battery);
+                    if (battery <= 0) spotLight.intensity = 0;
+                }
             }
 
-            // --- GHOST AI (Fleeing Logic) ---
+            // --- GHOST BEHAVIOR & ANIMATION ---
             const distToPlayer = ghostGroup.position.distanceTo(camera.position);
 
             if (ghostState === 'PANIC') {
-                // วิ่งหนีสุดชีวิต (หนีทะลุกำแพงได้ เพราะเป็นผี!)
                 const runDir = new THREE.Vector3().subVectors(ghostGroup.position, camera.position).normalize();
-                ghostTarget.copy(ghostGroup.position).add(runDir.multiplyScalar(5));
-                
-                document.getElementById('status-val').innerText = "ผีตกใจวิ่งหนีไปแล้ว!! 💨";
+                ghostTarget.copy(ghostGroup.position).add(runDir.multiplyScalar(6));
+                document.getElementById('status-val').innerText = "👻 น้องผีตกใจวิ่งหนีขาขวิด!";
                 document.getElementById('status-val').style.color = "#ff758c";
 
-                // หายตกใจหลังจากผ่านไป 3 วินาที
-                wanderTimer += delta;
-                if (wanderTimer > 3) {
+                ghostTimer += delta;
+                if (ghostTimer > 3.5) {
                     ghostState = 'WANDER';
-                    ghostMat.color.setHex(0xffffff); // กลับเป็นสีเดิม
-                    wanderTimer = 0;
+                    ghostMat.color.setHex(0xffffff);
+                    ghostTimer = 0;
                 }
+            } else if (distToPlayer < 7) {
+                // อาการเขินและแอบมองแบบกวนๆ (Peeking)
+                ghostState = 'PEEK';
+                document.getElementById('status-val').innerText = "🦊 น้องผีกำลังแอบชำเลืองมองคุณหลังเสา!";
+                document.getElementById('status-val').style.color = "#ffbe76";
+                ghostTarget.copy(camera.position);
             } else {
-                // เดินเล่นชิลๆ
-                wanderTimer -= delta;
-                if (wanderTimer <= 0) {
-                    wanderTimer = 3 + Math.random() * 4;
-                    ghostTarget.set(
-                        ghostGroup.position.x + (Math.random() - 0.5) * 15,
-                        1.5,
-                        ghostGroup.position.z + (Math.random() - 0.5) * 15
-                    );
-                }
-
-                if (distToPlayer < 6) {
-                    document.getElementById('status-val').innerText = "ชู่ว... ผีอยู่ใกล้ๆ นี่แหละ แกล้งเลย!";
-                    document.getElementById('status-val').style.color = "#ffbe76";
-                } else {
-                    document.getElementById('status-val').innerText = "กำลังตามหาผี...";
-                    document.getElementById('status-val').style.color = "#4cd137";
+                ghostTimer += delta;
+                if (ghostTimer > 5) {
+                    ghostTimer = 0;
+                    ghostTarget.set((Math.random()-0.5)*25, 1.5, (Math.random()-0.5)*25);
                 }
             }
 
             // การเคลื่อนที่ของผี
-            const ghostSpeed = (ghostState === 'PANIC' ? 8.0 : 2.0) * delta;
+            const ghostSpeed = (ghostState === 'PANIC' ? 9.0 : 1.8) * delta;
             ghostGroup.position.lerp(ghostTarget, ghostSpeed);
-            
-            // เอฟเฟกต์ลอยขึ้นลง และหันหน้า
-            ghostGroup.position.y = 1.5 + Math.sin(time * 3) * 0.2;
-            
-            // ผีพยายามหันหลังให้ผู้เล่นตลอดเวลา (ขี้อาย)
+            ghostGroup.position.y = 1.5 + Math.sin(time * 4) * 0.25;
+
+            // แอนิเมชันหันหน้ากวนๆ ทำท่าเอียงคอ
             const lookTarget = new THREE.Vector3().subVectors(ghostGroup.position, camera.position).normalize();
             ghostGroup.lookAt(ghostGroup.position.clone().add(lookTarget));
+            faceGroup.rotation.z = Math.sin(time * 3) * 0.15; // เอียงหัวตลกๆ
 
-            // หางส่ายไปมา
-            tail.rotation.y = Math.sin(time * 8) * 0.3;
+            // หากเปิดกล้องอยู่ ให้กล้องวงจรปิดจับภาพน้องผีตลอดเวลา
+            if (cctvActive) {
+                camera.lookAt(ghostGroup.position);
+            }
 
-            // --- COLLECT CANDIES ---
+            // --- COLLECTIBLES LOOP ---
             for (let i = candies.length - 1; i >= 0; i--) {
                 const candy = candies[i];
-                candy.rotation.y += delta * 2;
-                candy.rotation.x += delta;
-                candy.position.y = 0.5 + Math.sin(time * 4 + i) * 0.15;
-
+                candy.rotation.y += delta * 3;
                 if (camera.position.distanceTo(candy.position) < 1.5) {
                     scene.remove(candy);
                     candies.splice(i, 1);
                     collectedCandies++;
                     document.getElementById('candy-val').innerText = collectedCandies;
-                    playCandySound();
+                    playSfx('prank');
 
-                    if (collectedCandies >= 10) {
+                    if (collectedCandies >= 8) {
                         setTimeout(() => {
-                            alert("🎉 ยินดีด้วย! คุณแกล้งผีจนเก็บลูกกวาดครบ 10 ชิ้นแล้ว คุณคือผู้ชนะจอมป่วน!");
+                            alert("🎉 สุดยอด! คุณแกล้งผีจนเก็บลูกกวาดครบ 8 ชิ้น กลายเป็นเจ้าแห่งการแกล้งผี!");
                             location.reload();
-                        }, 500);
+                        }, 300);
                     }
                 }
             }
@@ -590,6 +654,7 @@
             renderer.render(scene, camera);
         }
 
+        const clock = new THREE.Clock();
         animate();
 
         window.addEventListener('resize', () => {

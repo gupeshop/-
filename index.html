@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shy Ghost Mansion - Ultimate Hide & Seek</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #030308;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+        }
+        #crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 117, 140, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 10;
+            transition: transform 0.1s, background-color 0.1s;
+        }
+        #crosshair.scaring {
+            transform: translate(-50%, -50%) scale(2);
+            background-color: rgba(255, 255, 255, 0.8);
+            border-color: #fff;
+        }
+        #hud {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.9);
+            pointer-events: none;
+            z-index: 10;
+            background: rgba(10, 10, 25, 0.6);
+            padding: 15px 25px;
+            border-radius: 12px;
+            border-left: 4px solid #ff758c;
+        }
+        #hud h1 { margin: 0 0 10px 0; font-size: 22px; color: #ff758c; }
+        #hud p { margin: 5px 0; font-size: 16px; font-weight: bold; }
+
+        #controls-hint {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 12, 27, 0.85);
+            color: #ff758c;
+            padding: 12px 30px;
+            border-radius: 30px;
+            font-size: 15px;
+            border: 1px solid rgba(255,117,140,0.4);
+            pointer-events: none;
+            z-index: 10;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+        }
+
+        #blocker {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(3, 3, 8, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            cursor: pointer;
+        }
+        #instructions {
+            text-align: center;
+            color: #fff;
+            max-width: 600px;
+            padding: 40px;
+            background: rgba(20, 16, 35, 0.95);
+            border: 2px solid #ff758c;
+            border-radius: 20px;
+            box-shadow: 0 15px 50px rgba(255,117,140,0.4);
+        }
+        #instructions h2 { color: #ff758c; margin-top: 0; font-size: 32px; }
+        #instructions p { color: #ddd; font-size: 16px; line-height: 1.8; }
+        #instructions .btn {
+            background: linear-gradient(135deg, #ff758c, #ff7eb3);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            margin-top: 25px;
+            box-shadow: 0 6px 20px rgba(255,117,140,0.6);
+            transition: transform 0.2s;
+        }
+        #instructions .btn:hover { transform: scale(1.05); }
+        
+        #flash-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: white;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 900;
+            transition: opacity 0.1s;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="flash-overlay"></div>
+    <div id="blocker">
+        <div id="instructions">
+            <h2>👻 มหกรรมแกล้งผีขี้อาย 🔦</h2>
+            <p>
+                คฤหาสน์นี้มี <b>"ผีจิ้งจอกน้อย"</b> ซ่อนตัวอยู่ แต่มันขี้อายมากๆ!<br>
+                หน้าที่ของคุณคือการเดินตามหามันให้เจอ แล้ว <b>คลิกเมาส์ซ้าย</b> เพื่อแกล้งให้มันตกใจ<br>
+                เมื่อมันตกใจ มันจะทำลูกกวาดวิเศษหล่นไว้ แกล้งมันและเก็บลูกกวาดให้ครบ 10 ชิ้น!
+            </p>
+            <p style="font-size: 14px; color: #ff758c; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 10px;">
+                🎮 ควบคุม: [W A S D] เดิน | [Mouse] มองรอบๆ<br>
+                💡 [คลิกซ้าย] ตะโกนแกล้งผี! | [F] เปิด/ปิดไฟฉาย | [Shift] วิ่ง
+            </p>
+            <button class="btn">เข้าสู่คฤหาสน์ 🚪</button>
+        </div>
+    </div>
+
+    <div id="canvas-container"></div>
+    <div id="crosshair"></div>
+
+    <div id="hud">
+        <h1>🦊 แกล้งผีขี้อาย</h1>
+        <p>🍬 ลูกกวาดที่ยึดมาได้: <span id="candy-val">0</span> / 10</p>
+        <p>สถานะผี: <span id="status-val" style="color: #4cd137;">แอบซ่อนอยู่...</span></p>
+    </div>
+
+    <div id="controls-hint">
+        💡 เดินหาผีจิ้งจอกให้เจอ แล้ว "คลิกซ้าย" แกล้งมันให้ตกใจ!
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+
+    <script>
+        // --- SYNTH AUDIO SYSTEM (No external files needed) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playScareSound() {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        function playGhostCry() {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.1);
+            osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.5);
+        }
+
+        function playCandySound() {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+            osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.1);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.2);
+        }
+
+        // --- SCENE SETUP ---
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x020205);
+        scene.fog = new THREE.FogExp2(0x020205, 0.04);
+
+        const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(2, 1.6, 2);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        container.appendChild(renderer.domElement);
+
+        // --- LIGHTING ---
+        const hemiLight = new THREE.HemisphereLight(0x1a1a3a, 0x050515, 0.6);
+        scene.add(hemiLight);
+
+        // --- FLASHLIGHT (POV) ---
+        const flashlightGroup = new THREE.Group();
+        camera.add(flashlightGroup);
+        scene.add(camera);
+
+        const spotLight = new THREE.SpotLight(0xfff0dd, 3.5, 30, Math.PI / 5, 0.6, 1.5);
+        spotLight.position.set(0, 0, 0);
+        spotLight.target.position.set(0, 0, -10);
+        spotLight.castShadow = true;
+        spotLight.shadow.mapSize.width = 1024;
+        spotLight.shadow.mapSize.height = 1024;
+        flashlightGroup.add(spotLight);
+        flashlightGroup.add(spotLight.target);
+
+        let flashlightOn = true;
+
+        // --- PROCEDURAL MAZE GENERATOR ---
+        const walls = [];
+        const wallMat = new THREE.MeshStandardMaterial({ color: 0x1d1a2f, roughness: 0.9, bumpScale: 0.02 });
+        const mapLayout = [
+            "WWWWWWWWWWWWWWWWWWWW",
+            "W......W...........W",
+            "W..WW..W..WWWWWW...W",
+            "W..WW......W.......W",
+            "W......W...W...WWWWW",
+            "WWWWW..W...W.......W",
+            "W......W...WWWWW...W",
+            "W..WWWWWW..........W",
+            "W.......W..WWWWW...W",
+            "W..WW...W..W...W...W",
+            "W..WW......W.......W",
+            "WWWWWWWWWWWWWWWWWWWW"
+        ];
+
+        const tileSize = 4;
+        const wallHeight = 5;
+
+        // สร้างพื้นและเพดาน
+        const floorGeo = new THREE.PlaneGeometry(mapLayout[0].length * tileSize, mapLayout.length * tileSize);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x0a0914, roughness: 0.8 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        floor.receiveShadow = true;
+        scene.add(floor);
+
+        const ceiling = new THREE.Mesh(floorGeo, new THREE.MeshStandardMaterial({ color: 0x05040a }));
+        ceiling.rotation.x = Math.PI / 2;
+        ceiling.position.y = wallHeight;
+        scene.add(ceiling);
+
+        // วาดกำแพงตาม Array
+        const offsetX = (mapLayout[0].length * tileSize) / 2;
+        const offsetZ = (mapLayout.length * tileSize) / 2;
+
+        for (let z = 0; z < mapLayout.length; z++) {
+            for (let x = 0; x < mapLayout[z].length; x++) {
+                if (mapLayout[z][x] === 'W') {
+                    const geo = new THREE.BoxGeometry(tileSize, wallHeight, tileSize);
+                    const mesh = new THREE.Mesh(geo, wallMat);
+                    mesh.position.set(x * tileSize - offsetX + (tileSize/2), wallHeight/2, z * tileSize - offsetZ + (tileSize/2));
+                    mesh.castShadow = true;
+                    mesh.receiveShadow = true;
+                    scene.add(mesh);
+                    walls.push(mesh);
+                } else if (Math.random() > 0.85) {
+                    // แอบเพิ่มหลอดไฟสีๆ ตามทางเดิน
+                    const colors = [0xff758c, 0x70a1ff, 0x7bed9f];
+                    const pLight = new THREE.PointLight(colors[Math.floor(Math.random()*colors.length)], 1, 8);
+                    pLight.position.set(x * tileSize - offsetX + (tileSize/2), 3, z * tileSize - offsetZ + (tileSize/2));
+                    scene.add(pLight);
+                }
+            }
+        }
+
+        // --- THE SHY FOX GHOST MODEL ---
+        const ghostGroup = new THREE.Group();
+        
+        // ตัวผีนุ่มฟู
+        const ghostMat = new THREE.MeshStandardMaterial({ 
+            color: 0xffffff, 
+            roughness: 0.3, 
+            transparent: true, 
+            opacity: 0.85,
+            emissive: 0x222233
+        });
+        
+        const bodyGeo = new THREE.SphereGeometry(0.7, 32, 32);
+        const body = new THREE.Mesh(bodyGeo, ghostMat);
+        body.scale.set(1, 1.2, 1); // ยืดตัวนิดๆ
+        body.castShadow = true;
+        ghostGroup.add(body);
+
+        // หูจิ้งจอก
+        const earGeo = new THREE.ConeGeometry(0.2, 0.6, 16);
+        const leftEar = new THREE.Mesh(earGeo, ghostMat);
+        leftEar.position.set(-0.35, 0.8, 0);
+        leftEar.rotation.z = 0.2;
+        ghostGroup.add(leftEar);
+        
+        const rightEar = new THREE.Mesh(earGeo, ghostMat);
+        rightEar.position.set(0.35, 0.8, 0);
+        rightEar.rotation.z = -0.2;
+        ghostGroup.add(rightEar);
+
+        // หางกลมๆ โผล่ด้านหลัง
+        const tailGeo = new THREE.SphereGeometry(0.3, 16, 16);
+        const tail = new THREE.Mesh(tailGeo, ghostMat);
+        tail.position.set(0, -0.4, -0.6);
+        ghostGroup.add(tail);
+
+        // หน้าตาขี้อาย (ตา > <)
+        const faceGroup = new THREE.Group();
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x111122 });
+        
+        // ขีดตาซ้าย
+        const eyeL = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.05, 0.05), eyeMat);
+        eyeL.position.set(-0.25, 0.2, 0.65);
+        eyeL.rotation.z = Math.PI / 6;
+        faceGroup.add(eyeL);
+        const eyeL2 = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.05, 0.05), eyeMat);
+        eyeL2.position.set(-0.25, 0.1, 0.65);
+        eyeL2.rotation.z = -Math.PI / 6;
+        faceGroup.add(eyeL2);
+
+        // ขีดตาขวา
+        const eyeR = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.05, 0.05), eyeMat);
+        eyeR.position.set(0.25, 0.2, 0.65);
+        eyeR.rotation.z = -Math.PI / 6;
+        faceGroup.add(eyeR);
+        const eyeR2 = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.05, 0.05), eyeMat);
+        eyeR2.position.set(0.25, 0.1, 0.65);
+        eyeR2.rotation.z = Math.PI / 6;
+        faceGroup.add(eyeR2);
+
+        // แก้มแดง
+        const blushMat = new THREE.MeshBasicMaterial({ color: 0xff758c });
+        const blushL = new THREE.Mesh(new THREE.CircleGeometry(0.12, 16), blushMat);
+        blushL.position.set(-0.4, 0, 0.68);
+        faceGroup.add(blushL);
+        const blushR = new THREE.Mesh(new THREE.CircleGeometry(0.12, 16), blushMat);
+        blushR.position.set(0.4, 0, 0.68);
+        faceGroup.add(blushR);
+
+        ghostGroup.add(faceGroup);
+        ghostGroup.position.set(0, 1.5, -8);
+        scene.add(ghostGroup);
+
+        // --- COLLECTIBLES (Candies) ---
+        const candies = [];
+        const candyGeo = new THREE.OctahedronGeometry(0.3);
+        const candyMat = new THREE.MeshStandardMaterial({ color: 0xff4757, emissive: 0xaa0022, roughness: 0.1 });
+
+        function dropCandy(pos) {
+            const candy = new THREE.Mesh(candyGeo, candyMat);
+            candy.position.copy(pos);
+            candy.position.y = 0.5;
+            scene.add(candy);
+            candies.push(candy);
+        }
+
+        // --- CONTROLS & POINTER LOCK ---
+        const controls = new THREE.PointerLockControls(camera, renderer.domElement);
+        const blocker = document.getElementById('blocker');
+
+        blocker.addEventListener('click', () => {
+            controls.lock();
+            audioCtx.resume();
+        });
+        controls.addEventListener('lock', () => blocker.style.display = 'none');
+        controls.addEventListener('unlock', () => blocker.style.display = 'flex');
+
+        const moveState = { forward: false, backward: false, left: false, right: false, run: false };
+        let isScaring = false;
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'KeyW' || e.code === 'ArrowUp') moveState.forward = true;
+            if (e.code === 'KeyS' || e.code === 'ArrowDown') moveState.backward = true;
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') moveState.left = true;
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') moveState.right = true;
+            if (e.code === 'ShiftLeft') moveState.run = true;
+
+            if (e.code === 'KeyF') {
+                flashlightOn = !flashlightOn;
+                spotLight.intensity = flashlightOn ? 3.5 : 0;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'KeyW' || e.code === 'ArrowUp') moveState.forward = false;
+            if (e.code === 'KeyS' || e.code === 'ArrowDown') moveState.backward = false;
+            if (e.code === 'KeyA' || e.code === 'ArrowLeft') moveState.left = false;
+            if (e.code === 'KeyD' || e.code === 'ArrowRight') moveState.right = false;
+            if (e.code === 'ShiftLeft') moveState.run = false;
+        });
+
+        // SCARE MECHANIC (คลิกเพื่อแกล้ง)
+        window.addEventListener('mousedown', (e) => {
+            if (controls.isLocked && e.button === 0 && !isScaring) {
+                isScaring = true;
+                playScareSound();
+                
+                // Visual Effect (แฟลชสว่าง และเป้าเล็งขยาย)
+                spotLight.intensity = 10;
+                document.getElementById('flash-overlay').style.opacity = '0.3';
+                document.getElementById('crosshair').classList.add('scaring');
+
+                // เช็คว่าผีอยู่ใกล้และหันหน้าไปหามันไหม
+                const dist = camera.position.distanceTo(ghostGroup.position);
+                const dirToGhost = new THREE.Vector3().subVectors(ghostGroup.position, camera.position).normalize();
+                const camDir = new THREE.Vector3();
+                camera.getWorldDirection(camDir);
+                const dotProduct = camDir.dot(dirToGhost);
+
+                if (dist < 8 && dotProduct > 0.7) {
+                    // แกล้งสำเร็จ! ผีตกใจวิ่งหนี
+                    ghostState = 'PANIC';
+                    playGhostCry();
+                    ghostMat.color.setHex(0xffaaaa); // ตัวแดงเพราะตกใจ
+                    
+                    // ดรอปลูกอม
+                    if(Math.random() > 0.3) {
+                        dropCandy(ghostGroup.position.clone());
+                    }
+                }
+
+                setTimeout(() => {
+                    spotLight.intensity = flashlightOn ? 3.5 : 0;
+                    document.getElementById('flash-overlay').style.opacity = '0';
+                    document.getElementById('crosshair').classList.remove('scaring');
+                    isScaring = false;
+                }, 200);
+            }
+        });
+
+        // --- COLLISION DETECTION ---
+        function checkCollision(newPos) {
+            const playerRadius = 0.4;
+            const playerBox = new THREE.Box3(
+                new THREE.Vector3(newPos.x - playerRadius, 0.1, newPos.z - playerRadius),
+                new THREE.Vector3(newPos.x + playerRadius, 1.8, newPos.z + playerRadius)
+            );
+            for (let wall of walls) {
+                const wallBox = new THREE.Box3().setFromObject(wall);
+                if (playerBox.intersectsBox(wallBox)) return true;
+            }
+            return false;
+        }
+
+        // --- GAME STATE & LOOP ---
+        const clock = new THREE.Clock();
+        let collectedCandies = 0;
+        let ghostState = 'WANDER'; // WANDER, PANIC
+        let ghostTarget = new THREE.Vector3();
+        let wanderTimer = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const delta = clock.getDelta();
+            const time = clock.getElapsedTime();
+
+            // Player Movement
+            if (controls.isLocked) {
+                const speed = (moveState.run ? 7.5 : 4.5) * delta;
+                const oldPos = camera.position.clone();
+                const dir = new THREE.Vector3();
+
+                if (moveState.forward) controls.moveForward(speed);
+                if (moveState.backward) controls.moveForward(-speed);
+                if (moveState.left) controls.moveRight(-speed);
+                if (moveState.right) controls.moveRight(speed);
+
+                // Slide Collision แบบง่ายๆ แยกแกน X และ Z
+                if (checkCollision(camera.position)) {
+                    const testX = oldPos.clone().setX(camera.position.x);
+                    const testZ = oldPos.clone().setZ(camera.position.z);
+                    
+                    if (!checkCollision(testX)) {
+                        camera.position.copy(testX);
+                    } else if (!checkCollision(testZ)) {
+                        camera.position.copy(testZ);
+                    } else {
+                        camera.position.copy(oldPos);
+                    }
+                }
+                camera.position.y = 1.6;
+            }
+
+            // --- GHOST AI (Fleeing Logic) ---
+            const distToPlayer = ghostGroup.position.distanceTo(camera.position);
+
+            if (ghostState === 'PANIC') {
+                // วิ่งหนีสุดชีวิต (หนีทะลุกำแพงได้ เพราะเป็นผี!)
+                const runDir = new THREE.Vector3().subVectors(ghostGroup.position, camera.position).normalize();
+                ghostTarget.copy(ghostGroup.position).add(runDir.multiplyScalar(5));
+                
+                document.getElementById('status-val').innerText = "ผีตกใจวิ่งหนีไปแล้ว!! 💨";
+                document.getElementById('status-val').style.color = "#ff758c";
+
+                // หายตกใจหลังจากผ่านไป 3 วินาที
+                wanderTimer += delta;
+                if (wanderTimer > 3) {
+                    ghostState = 'WANDER';
+                    ghostMat.color.setHex(0xffffff); // กลับเป็นสีเดิม
+                    wanderTimer = 0;
+                }
+            } else {
+                // เดินเล่นชิลๆ
+                wanderTimer -= delta;
+                if (wanderTimer <= 0) {
+                    wanderTimer = 3 + Math.random() * 4;
+                    ghostTarget.set(
+                        ghostGroup.position.x + (Math.random() - 0.5) * 15,
+                        1.5,
+                        ghostGroup.position.z + (Math.random() - 0.5) * 15
+                    );
+                }
+
+                if (distToPlayer < 6) {
+                    document.getElementById('status-val').innerText = "ชู่ว... ผีอยู่ใกล้ๆ นี่แหละ แกล้งเลย!";
+                    document.getElementById('status-val').style.color = "#ffbe76";
+                } else {
+                    document.getElementById('status-val').innerText = "กำลังตามหาผี...";
+                    document.getElementById('status-val').style.color = "#4cd137";
+                }
+            }
+
+            // การเคลื่อนที่ของผี
+            const ghostSpeed = (ghostState === 'PANIC' ? 8.0 : 2.0) * delta;
+            ghostGroup.position.lerp(ghostTarget, ghostSpeed);
+            
+            // เอฟเฟกต์ลอยขึ้นลง และหันหน้า
+            ghostGroup.position.y = 1.5 + Math.sin(time * 3) * 0.2;
+            
+            // ผีพยายามหันหลังให้ผู้เล่นตลอดเวลา (ขี้อาย)
+            const lookTarget = new THREE.Vector3().subVectors(ghostGroup.position, camera.position).normalize();
+            ghostGroup.lookAt(ghostGroup.position.clone().add(lookTarget));
+
+            // หางส่ายไปมา
+            tail.rotation.y = Math.sin(time * 8) * 0.3;
+
+            // --- COLLECT CANDIES ---
+            for (let i = candies.length - 1; i >= 0; i--) {
+                const candy = candies[i];
+                candy.rotation.y += delta * 2;
+                candy.rotation.x += delta;
+                candy.position.y = 0.5 + Math.sin(time * 4 + i) * 0.15;
+
+                if (camera.position.distanceTo(candy.position) < 1.5) {
+                    scene.remove(candy);
+                    candies.splice(i, 1);
+                    collectedCandies++;
+                    document.getElementById('candy-val').innerText = collectedCandies;
+                    playCandySound();
+
+                    if (collectedCandies >= 10) {
+                        setTimeout(() => {
+                            alert("🎉 ยินดีด้วย! คุณแกล้งผีจนเก็บลูกกวาดครบ 10 ชิ้นแล้ว คุณคือผู้ชนะจอมป่วน!");
+                            location.reload();
+                        }, 500);
+                    }
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
